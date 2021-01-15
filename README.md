@@ -20,7 +20,7 @@ This is a R package for time series forecasting and got created for a master the
 
 ## Description
 
-## Use cases
+## Use case
 
 ## Installation
 
