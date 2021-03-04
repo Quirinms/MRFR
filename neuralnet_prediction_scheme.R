@@ -1,10 +1,7 @@
-regression_prediction_scheme <- function(weights, wmatrix, rhwtCoeff, ccps,
-                                         agg_per_lvl){
+neuralnet_prediction_scheme <- function(wmatrix, rhwtCoeff, ccps, agg_per_lvl){
   # INPUT
-  # weights               Array carrying weights which were obtained from an
-  #                       optimization task and which can solve a specific equation.
-  # wmatrix[scales, n]    Matrix with wavelet coefficients.
-  # rhwtCoeff[scales, n]  Matrix with smooth coefficients.
+  # wmatrix[scales, n]    Matrix with wavelet coefficients
+  # rhwtCoeff[scales, n]  Matrix with smooth coefficients
   # ccps                  Vector with numbers which are associated with wavelet levels.
   #                       The last number is associated with the smooth level.
   #                       Each number determines the number of coefficient used per level.
@@ -18,10 +15,6 @@ regression_prediction_scheme <- function(weights, wmatrix, rhwtCoeff, ccps,
   #
   # Author: QS, 02/2021
   
-  #if(!is.vector(weights)){
-  #  message("weights must be of type vector")
-  #  return()
-  #}
   #if(!is.matrix(wmatrix)){
   #  message("wmatrix must be of type matrix")
   #  return()
@@ -39,21 +32,22 @@ regression_prediction_scheme <- function(weights, wmatrix, rhwtCoeff, ccps,
   #  return()
   #}
   
-  time = dim(wmatrix)[2]
-  future_point = 0
-  counter = 1
   scales = length(agg_per_lvl)
+  time = dim(wmatrix)[2]
+  future_point = c()
+  counter = 1
   for(s in 0:scales){
     for(k in 0:(ccps[s+1]-1)){
       if(s != scales){
         index = time - k*agg_per_lvl[s+1]
-        future_point = future_point + ((weights[[1]][counter])) * wmatrix[s+1, index]
+        future_point = c(future_point, wmatrix[s+1, index])
+        counter = counter + 1
       }
       else{
         index = time - k*agg_per_lvl[s]
-        future_point = future_point + ((weights[[1]][counter])) * rhwtCoeff[s, index]
+        future_point = c(future_point, rhwtCoeff[s, index])
+        counter = counter + 1
       }
-      counter = counter + 1
     }
   }
   result = list("future_point" = future_point)

@@ -1,33 +1,34 @@
-#' Least Square Method for Regression
-#'
-#' This function computes the weights for the auto regression depending
-#' on the given wavelet decomposition.
-#'
-#' @param points_in_future 1D array with the target values
-#' @param lsmatrix 2D matrix containing the wavelet and smooth coefficients
-#' chosen for training
-#' @return List of parameter with 1D array carrying weights.
-#' @examples
-#' data(AirPassengers)
-#' len_data = length(array(AirPassengers))
-#' ccps = c(1,1,1)
-#' scales = length(ccps) - 1
-#' # Decomposition
-#' dec_res <- decomposition(array(AirPassengers), scales = scales)
-#' # Training
-#' trs_res <- training_scheme(dec_res$data, dec_res$wmatrix, dec_res$rhwtCoeff, dec_res$scales, ccps)
-#' arr_future_points = trs_res$points_in_future
-#' matrix = trs_res$lsmatrix
-#' # Optimization method
-#' weights = regression_lsm_optimization(arr_future_points, matrix)
-#'@export
 regression_lsm_optimization <- function(points_in_future, lsmatrix){
-  if(requireNamespace("limSolve", quietly = TRUE)){
-    weights = limSolve::Solve(lsmatrix, points_in_future)
+  # INPUT
+  # points_in_future[1:n] vector: n many values of the time series, for which there
+  #                       is an equation from a prediction scheme.
+  # lsmatrix[m,n]         Matrix carrying predictive equations associated with a
+  #                       specific value of the time series.
+  #
+  # OUTPUT
+  # weights               Array of weights carrying the solution for a matrix
+  #                       problem, which was solves with ordinary least squares.
+  #
+  # Author: QS, 02/2021
+
+  #if(!is.vector(points_in_future)){
+  #  message("points_in_future must be of type vector")
+  #  return()
+  #}
+  #if(!is.matrix(lsmatrix)){
+  #  message("lsmatrix must be of type matrix")
+  #  return()
+  #}
+
+  if (!requireNamespace('limSolve', quietly = TRUE)) {
+    message(
+      "Package limSolve is missing in function regression_lsm_optimization
+      No computations are performed.
+      Please install the packages which are defined in 'Suggests'"
+    )
+    return()
   }
-  else{
-    warning("Package 'limSolve' is not installed")
-  }
+  weights = limSolve::Solve(lsmatrix, points_in_future)
   result = list("weights" = weights)
   return(result)
 }

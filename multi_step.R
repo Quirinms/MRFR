@@ -1,45 +1,72 @@
-#' Multi Step Forecast
-#'
-#' This function creates a multi step forecast using a multi layer perceptron
-#' with one hidden Layer or an auto regressive approach.
-#' Several steps ahead are computed recursively.
-#'
-#' @param data One dimensional array of signal values
-#' @param steps Integer indicating the number of steps to forecast ahead (forecast horizon)
-#' @param scales Integer Number of wavelet scales to use
-#' @param ccps 1D array containing the number of coefficients chosen per scales
-#' (includes the number of coefficients for the smooth coefficient)
-#' @param method Character indicating Regression ("r") or the Neural Network ("n")
-#' @return List of parameter with array carrying "steps" many forecasts.
-#' @examples
-#' data(AirPassengers)
-#' len_data = length(array(AirPassengers))
-#' result = multi_step(array(AirPassengers)[1:(len_data-1)], 2, 2, c(1,1,1), method="r")
-#' forecast = result$forecast
-#' @export
 multi_step <- function(data, steps, ccps, agg_per_lvl, method = "r"){
+  # INPUT
+  # data[1:n]             Vector with n time series values.
+  #
+  # OPTIONAL
+  # steps                 Number indicating horizon for forecast from 1 to horizon
+  # ccps                  Vector with numbers which are associated with wavelet levels.
+  #                       The last number is associated with the smooth level.
+  #                       Each number determines the number of coefficient used per level.
+  #                       The selection follows a specific scheme.
+  # agg_per_lvl[]         Vector carrying numbers whose index is associated with the
+  #                       wavelet level. The numbers indicate the number of time in
+  #                       points used for aggregation from the original time series.
+  # method                String indicating which method to use (r = Autoregression, nn = Neural Network)
+  #
+  #
+  # OUTPUT
+  # forecast              Array carrying the forecasts, where the index of the entry
+  #                       is associated with the horizon of the forecast.
+  # Author: QS, 02/2021
+  if(!is.vector(data)){
+    message("Data must be of type vector")
+    return()
+  }
+  if(!is.double(steps)){
+    message("steps must be of type double")
+    return()
+  }
+  if(!is.vector(ccps)){
+    message("ccps must be of type vector")
+    return()
+  }
+  if(!is.vector(agg_per_lvl)){
+    message("agg_per_lvl must be of type vector")
+    return()
+  }
+  if(!is.character(method)){
+    message("method must be of type character")
+    return()
+  }
   multistep = c()
   for(i in 1:steps){
     forecast = 0
-    if(method == "r"){
-      forecast = regression_one_step(data, ccps, agg_per_lvl)
-      forecast = forecast$forecast
-    }
-    if(method == "nn"){
-      forecast = neuralnet_one_step(data, ccps, agg_per_lvl)
-      forecast = forecast$forecast
-    }
-    if(method == "xgboost"){
-      forecast = xgboost_one_step(data, ccps, agg_per_lvl)
-      forecast = forecast$forecast
-    }
-    if(method == "svm"){
-      forecast = svm_one_step(data, ccps, agg_per_lvl)
-      forecast = forecast$forecast
-    }
-    
+    switch(method,
+           "r"={
+             forecast = regression_one_step(data, ccps, agg_per_lvl)
+             forecast = forecast$forecast
+           },
+           "nn"={
+             forecast = neuralnet_one_step(data, ccps, agg_per_lvl)
+             forecast = forecast$forecast
+           },
+           {
+             message("Use 'r' for autoregression and 'nn' for neural network
+              (multilayer perceptron)")
+             return()
+           }
+    )
+    #if(method == "xgboost"){
+    #  forecast = xgboost_one_step(data, ccps, agg_per_lvl)
+    #  forecast = forecast$forecast
+    #}
+    #if(method == "svm"){
+    #  forecast = svm_one_step(data, ccps, agg_per_lvl)
+    #  forecast = forecast$forecast
+    #}
+
     multistep = c(multistep, forecast)
-    data = array(unlist(c(data, forecast)))
+    data = as.vector(unlist(c(data, forecast)))
   }
   multistep = array(unlist(multistep))
   # Cap forecasts exceeding certain limits

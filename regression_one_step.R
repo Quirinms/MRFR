@@ -1,22 +1,30 @@
-#' One Step Forecast with Regression
-#'
-#' This function computes a one step forecast using the Regression approach.
-#'
-#' @param data One dimensional array of signal values
-#' @param ccps 1D array containing the number of coefficients chosen per each
-#' scale. It accounts for all wavelet levels and the last smooth coefficient
-#' level. The last number of the array is the number of coefficients for the
-#' smooth level. Therefore the length of this array is larger by one than the
-#' parameter "scales".
-#' @return List of parameter with float forecast.
-#'
-#' @examples
-#' data(AirPassengers)
-#' len_data = length(array(AirPassengers))
-#' result = regression_one_step(array(AirPassengers)[1:(len_data-1)], c(1,1,1))
-#' forecast = result$forecast
-#' @export
 regression_one_step <- function(data, ccps, agg_per_lvl){
+  # INPUT
+  # data[1:n]             Vector with n time series values.
+  # ccps                  Vector with numbers which are associated with wavelet levels.
+  #                       The last number is associated with the smooth level.
+  #                       Each number determines the number of coefficient used per level.
+  #                       The selection follows a specific scheme.
+  # agg_per_lvl[]         Vector carrying numbers whose index is associated with the
+  #                       wavelet level. The numbers indicate the number of time in
+  #                       points used for aggregation from the original time series.
+  #
+  # OUTPUT
+  # forecast              Double one step forecast.
+  # Author: QS, 02/2021
+  if(!is.vector(data)){
+    message("Data must be of type vector!")
+    return()
+  }
+  if(!is.vector(ccps)){
+    message("ccps must be of type vector")
+    return()
+  }
+  if(!is.vector(agg_per_lvl)){
+    message("agg_per_lvl must be of type vector")
+    return()
+  }
+  
   if(is.null(agg_per_lvl)){
     stop("Parameter agg_per_lvl is not defined")
   }
@@ -44,6 +52,4 @@ regression_one_step <- function(data, ccps, agg_per_lvl){
   result = list("forecast" = forecast)
   return(result)
 }
-
-
 

@@ -1,72 +1,140 @@
-#' Model Selection for Multiresolution Forecasts
-#'
-#' This function computes the errors of rolling windows for multiple settings
-#' for a multi layer perceptron with one hidden Layer or a regression. The
-#' procedures saves csv containing the different settings. The settings are
-#' saved as String. The AIC of the rolling window result are computed.
-#' Each setting is assigned one AIC value.
-#'
-#' @param data One dimensional array of signal values
-#' @param data_name String indicating file name in order to assign a name for
-#' the resulting csv file to save.
-#' @param horizon Integer indicating the number of steps to forecast ahead
-#' @param window_size Integer indicating the number of days, for which a forecast
-#' should be evaluated. The procedure uses automatically the last part of the time
-#' series
-#' @param method Character indicating Regression ("r") or the Neural Network ("n")
-#' @param level Integer indicating how many decomposition levels to produce. The
-#' settings for the parameters is adjusted to exactly this level.
-#' @return None
-#' @export
-evolutionary_optim <- function(data, data_name = "data", dir_name = "",
+evolutionary_optim <- function(data,
                                agg_per_lvl,
+                               data_name = "data",
+                               dir_name = "",
                                horizon = 14,
                                window_size = 365,
                                method = "r",
-                               crit = "AIC", itermax = 1){
-  len_data = length(data)
-  if(len_data < (3*365)){
-    warning("The length of time series is not long enough")
+                               crit = "AIC",
+                               itermax = 1,
+                               lower_limit = 1,
+                               upper_limit = 2,
+                               write = FALSE,
+                               numClusters = 1){
+  # INPUT
+  # data[1:n]             Vector with n values
+  # agg_per_lvl[]         Vector carrying numbers whose index is associated with the
+  #                       wavelet level. The numbers indicate the number of time in
+  #                       points used for aggregation from the original time series.
+  #
+  # OPTIONAL
+  # data_name             String with name for output file.
+  # dir_name              String with directory for output file.
+  # horizon               Number indicating horizon for forecast from 1 to horizon.
+  # window_size           Number indicating how many points are used for cross validation.
+  # method                String indicating which method to use (r = Autoregression, nn = Neural Network)
+  # crit                  String indicating which criterion to use:
+  #                       (AIC = Akaikes Information Criterion)
+  #                       (MRE = Mean Root Error).
+  # itermax               Number of iterations for evolutionary optimization method.
+  # lower_limit           Lower limit for coefficients selected for each level.
+  # upper_limit           Higher limit for coefficients selected for each level.
+  # numClusters           Number of clusters used for parallel computing.
+  #
+  #
+  # OUTPUT
+  #
+  # Author: QS, 02/2021
+  if(!is.vector(data)){
+    message("Data must be of type vector")
+    return()
   }
+  if(!is.vector(agg_per_lvl)){
+    message("agg_per_lvl must be of type vector")
+    return()
+  }
+  if(!is.character(data_name)){
+    message("data_name must be of type character")
+    return()
+  }
+  if(!is.character(dir_name)){
+    message("dir_name must be of type character")
+    return()
+  }
+  if(!is.double(horizon)){
+    message("horizon must be of type double")
+    return()
+  }
+  if(!is.double(window_size)){
+    message("window_size must be of type double")
+    return()
+  }
+  if(!is.character(method)){
+    message("method must be of type character")
+    return()
+  }
+  if(!is.character(crit)){
+    message("crit must be of type character")
+    return()
+  }
+  if(!is.double(itermax)){
+    message("itermax must be of type double")
+    return()
+  }
+  if(!is.double(lower_limit)){
+    message("lower_limit must be of type double")
+    return()
+  }
+  if(!is.double(upper_limit)){
+    message("upper_limit must be of type double")
+    return()
+  }
+  if(!is.logical(write)){
+    message("write must be of type logical")
+    return()
+  }
+  #if(!is.double(numClusters)){
+  #  message("numClusters must be of type double")
+  #  return()
+  #}
+  len_data = length(data)
   scales = length(agg_per_lvl)
   len_ccps = scales + 1
-  lower <- rep(1,len_ccps)
-  upper <- rep(7,len_ccps)
-  if(requireNamespace("DEoptim", quietly = TRUE)){
-    res = DEoptim::DEoptim(crit_rolling_window, lower, upper, fnMap = round,
-                           data = data, agg_per_lvl = agg_per_lvl,
-                           window_size = window_size,
-                           horizon = horizon, method = method,
-                           crit = crit, control = DEoptim::DEoptim.control(itermax = itermax))
+  lower <- rep(lower_limit,len_ccps)
+  upper <- rep(upper_limit,len_ccps)
+
+  if (!requireNamespace('DEoptim', quietly = TRUE)) {
+    message(
+      "Package DEoptim is missing in function evolutionary_optim.
+      No computations are performed.
+      Please install the packages which are defined in 'Suggests'"
+    )
+    return()
   }
-  else{
-    warning("Package 'DEoptim' is not installed")
-  }
+  res = DEoptim::DEoptim(crit_rolling_window, lower, upper, fnMap = round,
+                         data = data, agg_per_lvl = agg_per_lvl,
+                         window_size = window_size,
+                         horizon = horizon, method = method,
+                         crit = crit, numClusters = numClusters, control = DEoptim::DEoptim.control(itermax = itermax))
   ccps = as.numeric(res$optim$bestmem)
-  mat_error = rolling_window_parallel(data,
-                                      ccps = ccps,
-                                      agg_per_lvl = agg_per_lvl,
-                                      horizon = horizon,
-                                      window_size = window_size,
-                                      method = method)
+  mat_error = rolling_window(data,
+                             ccps = ccps,
+                             agg_per_lvl = agg_per_lvl,
+                             horizon = horizon,
+                             window_size = window_size,
+                             method = method)
   mat_error = mat_error$Rolling_Window
-  str_Error = get_savings_string(method = method,
-                                 horizon = horizon,
-                                 data_name = data_name,
-                                 dir_name = dir_name,
-                                 ccps = ccps,
-                                 agg_per_lvl = agg_per_lvl)
-  save_results(mat_error, str_Error)
+  if(write){
+    str_Error = get_savings_string(method = method,
+                                   horizon = horizon,
+                                   data_name = data_name,
+                                   dir_name = dir_name,
+                                   ccps = ccps,
+                                   agg_per_lvl = agg_per_lvl)
+    write_rolling_window(mat_error, str_Error)
+  }
+  return(mat_error)
 }
 
 crit_rolling_window <- function(ccps, agg_per_lvl, data, window_size, horizon,
-                                method, crit = "AIC"){
-  mat_error = rolling_window_parallel(data = data,
-                                      ccps = ccps,
-                                      agg_per_lvl = agg_per_lvl,
-                                      horizon = horizon,
-                                      window_size = window_size,
-                                      method = method)
+                                method, crit = "AIC", numClusters = "max"){
+  mat_error = rolling_window(data = data,
+                             ccps = ccps,
+                             agg_per_lvl = agg_per_lvl,
+                             horizon = horizon,
+                             window_size = window_size,
+                             method = method,
+                             numClusters = numClusters)
   mat_error = mat_error$Rolling_Window
   MAE = sum(abs(mat_error))/(365*14)
   AIC = length(data) * log(MAE^2) + 2*(sum(ccps)+1)
@@ -102,13 +170,8 @@ crit_rolling_window <- function(ccps, agg_per_lvl, data, window_size, horizon,
   }
 }
 
-save_results <- function(df_table, str_name){
-  if(requireNamespace("utils", quietly = TRUE)){
-    utils::write.table(df_table, str_name, row.names = FALSE)
-  }
-  else{
-    warning("Package 'utils' is not installed")
-  }
+write_rolling_window <- function(mat_table, str_name){
+  utils::write.table(mat_table, str_name, row.names = FALSE)
 }
 
 get_savings_string <- function(method, horizon, data_name, dir_name, ccps, agg_per_lvl){
