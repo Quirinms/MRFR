@@ -1,0 +1,177 @@
+---
+title: "The mrf package"
+author: "Quirin Stier"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{The mrf package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  message=FALSE,
+  warning = FALSE,
+  comment = "#>"
+)
+```
+
+```{r echo = FALSE}
+if (!requireNamespace("rmarkdown") || !rmarkdown::pandoc_available("1.12.3")) {
+  warning("This vignette requires pandoc version 1.12.3; code will not run in older versions.")
+  knitr::opts_chunk$set(eval = FALSE)
+}
+```
+
+The package mrf provides access to a univariate time series forecasting method.
+This forecasting method uses a redundant Haar wavelet transform to decompose a given time series in wavelet and smooth coefficients.
+The obtained wavelet and smooth coefficients are processed in a specific scheme in order to create one step forecasts.
+This scheme can be computed with an autoregression or a neural network.
+Multi step forecasts are created recursively with the one step forecast.
+A rolling forecasting origin can be created for cross validation with the method "rolling_window".
+Model selection is done with Akaikes information criterion (AIC) or the Mean Root Error (MRE).
+The input space for the model selection is searched for with an evolutionary optimization method.
+
+
+In the following example, the seasonal univariate entsoe dataset is loaded and visualized:
+```{r, fig.dim = c(7, 4)}
+library(mrf)
+data("entsoe")
+data = entsoe$value
+plot(data, type = "l", col = 4)
+```
+
+# Decomposition of time series "ENTSOE"
+
+The decomposition of the time series "ENTSOE" is shown for two levels. All wavelet levels and only the last smooth part level is used for further computation.
+
+```{r, fig.dim = c(7, 4)}
+dec = mrf::decomposition(data = data, agg_per_lvl = c(2,4))
+plot(dec$wmatrix[1,2:length(dec$wmatrix[1,])], type = "l", main = "Wavelet level 1", col = 4)
+```
+
+```{r, fig.dim = c(7, 4)}
+plot(dec$wmatrix[2,4:length(dec$wmatrix[1,])], type = "l", main = "Wavelet level 2", col = 4)
+```
+
+```{r, fig.dim = c(7, 4)}
+plot(dec$rhwtCoeff[2,4:length(dec$rhwtCoeff[1,])], type = "l", main = "Last smooth part level", col = 4)
+```
+
+# Evaluating time series forecasting models with cross validation
+
+In order to obtain robust forecasting models, multiple models are evaluated over a large sample space.
+This is done with a rolling forecasting origin - a cross validation approach specially adapted to time series forecasting.
+Cross validation is the partitioning into training and test data multiple times. Time
+series data cannot be split arbitrarily. The training set always consists of observations
+occurring in time prior to the test set. The training set must not be too short.
+All training data up to a specific time point - the origin - is used to create a forecast.
+The forecast here consists of a one step forecast and a multi step forecast for horizons 2 to 14.
+Such forecasts are created for the last 365 days of the time series.
+The autoregression is used to compute the forecasts.
+The ccps is the result of a model selection done in experiments using the model selection ("evolutionary_optim") method, as is presented at the end of this document.
+
+### Rolling forecasting origin
+
+```{r, eval = FALSE}
+horizon = 14
+window_size = 365
+rw_forecasts = mrf::rolling_window(data = data,
+                                   ccps = c(18,16,16,3,19,12),
+                                   agg_per_lvl = c(2,4,8,16,32),
+                                   horizon = horizon,
+                                   window_size = window_size,
+                                   method = "r",
+                                   numClusters = 1)
+```
+
+### Mean Absolute Error (MAE)
+
+The Mean Absolute Error (MAE) is the average over all (here 365) absolute errors of all multi step forecasts (here 14) computed.
+
+```{r, eval = FALSE}
+MAE = sum(abs(rw_forecasts$Rolling_Window))/(window_size*horizon)
+MAE
+```
+
+# Performance comparison with Mean Absolute Scaled Error (MASE)
+
+In order to evaluate the performance of the Multiresolution Forecast, the MAE is compared to a benchmark with the naive2 method.
+Therefore, in-sample forecasts with the naive2 are computed. The seasonal adjusted naive2 has period 7. Since horizons greater than 7 exceeds period 7, the period will be adjusted to 14 in those cases.
+The MAE of the Multiresolution Forecast is then scaled with the MAE of the in-sample forecast of the navie2 method.
+
+### Naive2 method
+
+```{r, eval = FALSE}
+len_data = length(data)
+data = data[1:(len_data-365)]
+len_data = length(data)
+window = len_data-365-14
+horizon = 14
+
+mat_forecast_error = rbind()
+for(i in 1:window){
+  forecast_error = c()
+  index = len_data-window-horizon+i
+  for(j in 1:horizon){
+    error_naive2 = 0
+    if(j < 8){
+      error_naive2 = data[index+j] - data[index+j-7]
+    }else{
+      error_naive2 = data[index+j] - data[index+j-14]
+    }
+    
+    forecast_error = c(forecast_error, error_naive2)
+  }
+  mat_forecast_error = rbind(mat_forecast_error, forecast_error)
+}
+MAE_naive2 = sum(abs(mat_forecast_error))/(window*horizon)
+MAE_naive2
+```
+
+### Mean Absolute Scaled Error (MASE)
+
+```{r, eval = FALSE}
+MASE = MAE/MAE_naive2
+MASE
+```
+
+
+# Model selection with an evolutionary optimization method
+
+The model selection adapts the method to data in the best possible way regarding the given parameter space.
+First, the multiresolution forecast method needs to be defined.
+Therefore, set the aggregation per level parameter appropriately.
+For this parameter, a dyadic scheme is recommended.
+So the first level consists of an average of each two points of the original time series, the second level uses four, further levels continue the power of two sequence (2,4,8,16,32).
+The averaging is done with an asymmetric manner (similar to moving average).
+Set the horizon as desired.
+Set the length of the window for the rolling forecasting origin (rolling_window method) large enough.
+Choose the feature processing method ("r" for regression as in autoregression or "nn" for neural network, here a multilayer perceptron).
+Choose the limits for all numbers of coefficients (for all levels).
+Now, that the multiresolution forecast method is defined, an evolutionary optimization method searchs the input space for the best parameter setting.
+The evaluation function for the best setting is a rolling forecasting origin, which is evaluated with the AIC of the MAE.
+The search is restricted to one iteration by default.
+This max iteration parameter can be set higher.
+The number of clusters for parallel computing can be set as desired from one to the maximum number of available clusters - 1 or simply as "max", which automatically chooses the largest available number of clusters - 1.
+The forecast error (error = forecast - actual) of the best found model is returned as result and can be saved as matrix in a csv file internally (use parameter "write").
+
+
+
+```{r, eval = FALSE}
+evolutionary_optim(data,
+                   agg_per_lvl = c(2,4),
+                   data_name = dataname,
+                   dir_name = "",
+                   horizon = 1,
+                   window_size = 10,
+                   method = "r",
+                   crit = "AIC",
+                   lower_limit = 1,
+                   upper_limit = 2)
+```
+
+
+

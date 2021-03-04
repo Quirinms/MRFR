@@ -1,0 +1,14 @@
+Package: mrf
+Type: Package
+Title: MultiResolutionForecasting
+Version: 0.1.1
+Author: Quirin Stier
+Maintainer: Quirin Stier <MultiResolutionForecasting@quirin-stier.de>
+Description: Forecasting of univariate time series using a feature extraction with variable prediction methods. Feature extraction is done with a redundant haar wavelet transform with filer h = (0.5, 0.5). Current implemented prediction methods are a regression and a multi layer perceptron, but other methods are possible too.
+Imports: limSolve, monmlp, DEoptim
+Depends: R (>= 3.5.0)
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Suggests: knitr, rmarkdown
+VignetteBuilder: knitr
