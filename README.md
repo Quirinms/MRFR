@@ -1,7 +1,7 @@
 # MRFR
 *Multi Resolution Forecasting in R -> MRFR*
 
-*Multi Resolution Forecasting in Python -> MRFPY (Link)*
+*MRFR: [Multi Resolution Forecasting in Python](https://github.com/Quirinms/MRFPY)*
 
 *Multi Resolution Time Series Forecasting (with wavelets)*
 
