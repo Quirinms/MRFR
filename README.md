@@ -20,7 +20,7 @@ This is a R package for time series forecasting and got created for a master the
 
 ## Installation
 
-install.packages("", repos = NULL, type="source")
+install.packages("mrf_0.1.1.tar.gz", repos = NULL, type="source")
 
 ## References
 
