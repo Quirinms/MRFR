@@ -4,8 +4,11 @@ rolling_window_single <- function(i, data, ccps, agg_per_lvl, horizon = 14,
   int_CFCP = int_total_length - window_size - horizon + i # Current Forecast Position
   dfTrain  = data[1:int_CFCP]
   dfTest   = data[int_CFCP+1:horizon]
-  forecast = multi_step(data = dfTrain, steps = horizon, ccps = ccps,
-                        method = method, agg_per_lvl = agg_per_lvl)
-  arr_Error = as.numeric(forecast$forecast) - dfTest
-  return(list("Error" = arr_Error))
+  forecast = multi_step(UnivariateData = dfTrain,
+                        Horizon = horizon,
+                        CoefficientCombination = ccps,
+                        Aggregation = agg_per_lvl,
+                        Method = method)
+  arr_Error = as.numeric(forecast) - dfTest
+  return(list("Error" = arr_Error, "Forecast"=dfTest))
 }

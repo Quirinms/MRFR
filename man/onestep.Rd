@@ -1,13 +1,12 @@
-\name{regression_one_step}
-\alias{regression_one_step}
-\title{One Step Forecast with Regression}
+\name{onestep}
+\alias{onestep}
+\title{One Step Forecast}
 \description{
-This function creates a one step forecast using an autoregression method.
-The ccps parameter controls the number of coefficients chosen for each wavelet
-and smooth part level individually.
+This function creates a one step forecast using the multiresolution forecasting
+framework.
 }
 \usage{
-regression_one_step(UnivariateData, CoefficientCombination, Aggregation)
+onestep(UnivariateData, CoefficientCombination, Aggregation, Method="r")
 }
 \arguments{
 \item{UnivariateData}{[1:n] Numerical vector with n values.}
@@ -18,6 +17,8 @@ The selection follows a specific scheme.}
 \item{Aggregation}{[1:Scales] Numerical vector carrying numbers whose index is
 associated with the wavelet level. The numbers indicate the number of time in
 points used for aggregation from the original time series.}
+\item{Method}{String indicating which method to use. Available methods: 'r'  =
+Autoregression. 'nn' = Neural Network.}
 }
 \value{
 \item{forecast}{Numerical value with one step forecast}
@@ -43,7 +44,9 @@ Quirin Stier
 }
 \examples{
 data(AirPassengers)
-len_data = length(as.vector(array(AirPassengers)))
-forecast = regression_one_step(as.vector(AirPassengers)[1:(len_data-1)], c(1,1,1), c(2,4))
+len_data = length(array(AirPassengers))
+forecast = onestep(as.vector(AirPassengers)[1:(len_data-1)], c(1,1,1), c(2,4))
+true_value = array(AirPassengers)[len_data]
+error = true_value - forecast
 }
-\keyword{Autoregression, One step forecast}
+\keyword{One Step Forecasts, Neural Networks, Multilayer Perceptron}

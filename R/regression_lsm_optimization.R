@@ -29,8 +29,7 @@ regression_lsm_optimization <- function(points_in_future, lsmatrix){
     return()
   }
   weights = limSolve::Solve(lsmatrix, points_in_future)
-  result = list("weights" = weights)
-  return(result)
+  return(weights)
 }
 
 

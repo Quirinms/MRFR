@@ -1,37 +1,47 @@
-decomposition <- function(data, agg_per_lvl = c(2,4,8,16,32)){
+decomposition <- function(UnivariateData, Aggregation = c(2,4,8,16,32)){
+  # DESCRIPTION
+  # This function decomposes a time series in its wavelet and smooth
+  # coefficients using the redundant Haar wavelet transform.
+  #
   # INPUT
-  # data[1:n]             Vector with n time series values.
+  # UnivariateData[1:n]           Numerical vector with n time series values.
   #
   # OPTIONAL
-  # agg_per_lvl[]         Vector carrying numbers whose index is associated with the
-  #                       wavelet level. The numbers indicate the number of time in
-  #                       points used for aggregation from the original time series.
+  # Aggregation[1:Scales]         Numerical vector carrying numbers whose index
+  #                               is associated with the wavelet level. The
+  #                               numbers indicate the number of values used for
+  #                               aggregation from the original time series.
   #
   # OUTPUT
-  # data                  Vector with n time series values.
-  # wmatrix[scales, n]    Matrix with wavelet coefficients.
-  # rhwtCoeff[scales, n]  Matrix with smooth coefficients.
-  # scales                Number of wavelet levels.
+  # UnivariateData[1:n]               Numerical vector with n time series values.
+  # WaveletCoefficients[Scales, n]    Numerical matrix with wavelet coefficients.
+  # SmoothCoefficients[Scales, n]     Numerical matrix with smooth coefficients.
+  # Scales                            Number of wavelet levels.
+  #
+  # DETAILS
+  #
   #
   # Author: QS, 02/2021
-  if(!is.vector(data)){
+  if(!is.vector(UnivariateData)){
     message("Data must be of type vector!")
     return()
   }
-  if(!is.vector(agg_per_lvl)){
+  if(!is.vector(Aggregation)){
     message("agg_per_lvl must be of type vector")
     return()
   }
-  intLenTS = length(data)
-  if(intLenTS < max(agg_per_lvl)){
+  intLenTS = length(UnivariateData)
+  if(intLenTS < max(Aggregation)){
     warning("The length of the time series or data is not long enough for given aggregation")
   }
-  scales = length(agg_per_lvl)
-  sprintf("Decomposition is built for %i levels", scales)
-  rhwtCoeff = dynamic_aggregation(data, agg_per_lvl)
-  wmatrix   = compute_wavelet_matrix(data, intLenTS, scales, rhwtCoeff, wmatrix)
-  result = list("data" = data, "wmatrix" = wmatrix, "rhwtCoeff" = rhwtCoeff, "scales" = scales)
-  return(result)
+  Scales = length(Aggregation)
+  sprintf("Decomposition is built for %i levels", Scales)
+  SmoothCoefficients = dynamic_aggregation(UnivariateData, Aggregation)
+  WaveletCoefficients   = compute_wavelet_matrix(UnivariateData, intLenTS, Scales, SmoothCoefficients, WaveletCoefficients)
+  return(list("UnivariateData" = UnivariateData,
+              "WaveletCoefficients" = WaveletCoefficients,
+              "SmoothCoefficients" = SmoothCoefficients,
+              "Scales" = Scales))
 }
 
 first_level_aggregation <- function(data, time, number_aggregation_points){

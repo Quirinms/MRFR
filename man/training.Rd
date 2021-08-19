@@ -1,24 +1,37 @@
-\name{regression_lsm_optimization}
-\alias{regression_lsm_optimization}
-\title{Least Square Method for Regression}
+\name{training}
+\alias{training}
+\title{Generic Training Scheme for wavelet framework}
 \description{
-This function computes the weights for the autoregression depending
-on the given wavelet decomposition.
-It uses ordinary least square method for optimizing a linear equation system.
+This function computes the input for the training phase required for
+one step forecasts.
+This computational step is required for all one step forecast procedures
+contained in this package.
 }
 \usage{
-regression_lsm_optimization(points_in_future, lsmatrix)
+training(UnivariateData, WaveletCoefficients, SmoothCoefficients, Scales,
+CoefficientCombination, Aggregation)
 }
 \arguments{
+\item{UnivariateData}{[1:n] Numerical vector with n values.}
+\item{WaveletCoefficients}{[Scales, n] Matrix with 'Scales' many wavelet scales
+row-wise with n columns corresponding to the time domain of a time series.}
+\item{SmoothCoefficients}{[Scales, n] Matrix with 'Scales' many smooth
+approximation scales row-wise with n columns corresponding to the time domain of
+a time series.}
+\item{Scales}{Number of wavelet levels.}
+\item{CoefficientCombination}{[1:Scales+1] Numerical vector with numbers which
+are associated with wavelet levels. The last number is associated with the
+smooth level. Each number determines the number of coefficient used per level.
+The selection follows a specific scheme.}
+\item{Aggregation}{[1:Scales] Numerical vector carrying numbers whose index is
+associated with the wavelet level. The numbers indicate the number of time in
+points used for aggregation from the original time series.}
+}
+\value{
 \item{points_in_future}{n many values of the time series, for which there is an
 equation from a prediction scheme.}
 \item{lsmatrix}{Matrix carrying predictive equations associated with a specific
 value of the time series.}
-}
-\value{
-List of
-\item{weights}{Array of weights carrying the solution for a matrix problem,
-which was solves with ordinary least squares.}
 }
 \references{
 Aussem, A., Campbell, J., and Murtagh, F. Waveletbased Feature Extraction
@@ -59,4 +72,4 @@ scheme = prediction_scheme(dec_res$WaveletCoefficients,
 dec_res$SmoothCoefficients, ccps, agg_per_lvl)
 forecast = weights %*% scheme
 }
-\keyword{Ordinary least squares}
+\keyword{Wavelets}

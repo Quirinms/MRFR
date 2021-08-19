@@ -1,16 +1,20 @@
-\name{regression_one_step}
-\alias{regression_one_step}
+\name{prediction_scheme}
+\alias{prediction_scheme}
 \title{One Step Forecast with Regression}
 \description{
-This function creates a one step forecast using an autoregression method.
-The ccps parameter controls the number of coefficients chosen for each wavelet
-and smooth part level individually.
+This function delivers the required wavelet and smooth coefficients from the
+decomposition based on a prediction scheme.
 }
 \usage{
-regression_one_step(UnivariateData, CoefficientCombination, Aggregation)
+prediction_scheme(WaveletCoefficients, SmoothCoefficients,
+CoefficientCombination, Aggregation)
 }
 \arguments{
-\item{UnivariateData}{[1:n] Numerical vector with n values.}
+\item{WaveletCoefficients}{[Scales, n] Matrix with 'Scales' many wavelet scales
+row-wise with n columns corresponding to the time domain of a time series.}
+\item{SmoothCoefficients}{[Scales, n] Matrix with 'Scales' many smooth
+approximation scales row-wise with n columns corresponding to the time domain of
+a time series.}
 \item{CoefficientCombination}{[1:Scales+1] Numerical vector with numbers which
 are associated with wavelet levels. The last number is associated with the
 smooth level. Each number determines the number of coefficient used per level.
@@ -20,7 +24,7 @@ associated with the wavelet level. The numbers indicate the number of time in
 points used for aggregation from the original time series.}
 }
 \value{
-\item{forecast}{Numerical value with one step forecast}
+\item{future_point}{Numerical value carrying one step forecast.}
 }
 \references{
 Aussem, A., Campbell, J., and Murtagh, F. Waveletbased Feature Extraction
@@ -43,7 +47,22 @@ Quirin Stier
 }
 \examples{
 data(AirPassengers)
-len_data = length(as.vector(array(AirPassengers)))
-forecast = regression_one_step(as.vector(AirPassengers)[1:(len_data-1)], c(1,1,1), c(2,4))
+len_data = length(array(AirPassengers))
+ccps = c(1,1,1)
+agg_per_lvl = c(2,4)
+# Decomposition
+dec_res <- decomposition(as.vector(AirPassengers), Aggregation = agg_per_lvl)
+# Training
+trs_res <- training(dec_res$UnivariateData, dec_res$WaveletCoefficients,
+dec_res$SmoothCoefficients,
+dec_res$Scales, ccps, agg_per_lvl)
+arr_future_points = trs_res$points_in_future
+matrix = trs_res$lsmatrix
+# Optimization method
+weights = regression_lsm_optimization(arr_future_points, matrix)
+# Forecast
+scheme = prediction_scheme(dec_res$WaveletCoefficients,
+dec_res$SmoothCoefficients, ccps, agg_per_lvl)
+forecast = weights %*% scheme
 }
-\keyword{Autoregression, One step forecast}
+\keyword{Wavelets}

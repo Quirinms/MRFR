@@ -2,7 +2,29 @@
 \alias{decomposition}
 \title{Redundant Haar Wavelet Decomposition}
 \description{
-This function decomposes a time series in its wavelet and smooth coefficients.
+This function decomposes a time series in its wavelet and smooth coefficients
+using the redundant Haar wavelet transform.
+}
+\usage{
+decomposition(UnivariateData, Aggregation = c(2, 4, 8, 16, 32))
+}
+\arguments{
+\item{UnivariateData}{[1:n] Numerical vector with n time series values}
+\item{Aggregation}{[1:Scales] Numerical vector of length 'Scales' carrying numbers whose index is associated with the
+wavelet level. The numbers indicate the number of values used for
+aggregation from the original time series.}
+}
+\value{
+List of
+\item{UnivariateData}{[1:n] Numerical vector with n time series values.}
+\item{WaveletCoefficients}{[Scales, n] Matrix with 'Scales' many wavelet scales
+row-wise with n columns corresponding to the time domain of a time series.}
+\item{SmoothCoefficients}{[Scales, n] Matrix with 'Scales' many smooth
+approximation scales row-wise with n columns corresponding to the time domain of
+a time series.}
+\item{Scales}{Number of wavelet levels.}
+}
+\details{
 The resulting wavelet and smooth coefficients are stored in so called wavelet
 and smooth part levels.
 The smooth part level is created from the original times series by aggregation
@@ -23,22 +45,6 @@ The wavelet levels are the differences between the original time series and
 the smooth levels. The first wavelet level is the difference of the original
 time series and the first smooth part level. The second wavelet level is the
 difference of the first and second smooth part level and so on.
-}
-\usage{
-decomposition(data, agg_per_lvl = c(2, 4, 8, 16, 32))
-}
-\arguments{
-\item{data}{Vector with time series values}
-\item{agg_per_lvl}{Vector carrying numbers whose index is associated with the
-wavelet level. The numbers indicate the number of time in points used for
-aggregation from the original time series.}
-}
-\value{
-List of
-\item{data}{Vector with the original time series values}
-\item{wmatrix}{2D Matrix with Wavelet Coefficients}
-\item{rhwtCoeff}{2D Matrix with Smooth Coefficient}
-\item{scales}{Number of scales}
 }
 \references{
 Aussem, A., Campbell, J., and Murtagh, F. Waveletbased Feature Extraction
@@ -62,8 +68,10 @@ Quirin Stier
 \examples{
 data(AirPassengers)
 plot(AirPassengers, type = "l", col = "black")
-result = decomposition(as.vector(array(AirPassengers)), agg_per_lvl = c(2,4))
-plot(result$rhwtCoeff[2,4:length(result$rhwtCoeff[2,])], type = "l", col = "blue")
-lines(array(AirPassengers)[4:length(result$rhwtCoeff[2,])], col = "black")
+dec_res = decomposition(as.vector(array(AirPassengers)), Aggregation = c(2,4))
+plot(dec_res$SmoothCoefficients[2,4:length(dec_res$SmoothCoefficients[2,])],
+type = "l", col = "blue")
+lines(array(AirPassengers)[4:length(dec_res$SmoothCoefficients[2,])],
+col = "black")
 }
 \keyword{Wavelets}

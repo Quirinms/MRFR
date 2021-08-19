@@ -37,10 +37,10 @@ The input space for the model selection is searched for with an evolutionary opt
 
 In the following example, the seasonal univariate entsoe dataset is loaded and visualized:
 ```{r, fig.dim = c(7, 4)}
-library(mrf)
-data("entsoe")
-data = entsoe$value
-plot(data, type = "l", col = 4)
+#library(mrf)
+data("entsoe", package="mrf")
+UnivariateData = entsoe$value
+plot(UnivariateData, type = "l", col = 4)
 ```
 
 # Decomposition of time series "ENTSOE"
@@ -48,16 +48,16 @@ plot(data, type = "l", col = 4)
 The decomposition of the time series "ENTSOE" is shown for two levels. All wavelet levels and only the last smooth part level is used for further computation.
 
 ```{r, fig.dim = c(7, 4)}
-dec = mrf::decomposition(data = data, agg_per_lvl = c(2,4))
-plot(dec$wmatrix[1,2:length(dec$wmatrix[1,])], type = "l", main = "Wavelet level 1", col = 4)
+dec = mrf::decomposition(UnivariateData = UnivariateData, Aggregation = c(2,4))
+plot(dec$WaveletCoefficients[1,2:length(dec$SmoothCoefficients[1,])], type = "l", main = "Wavelet level 1", col = 4)
 ```
 
 ```{r, fig.dim = c(7, 4)}
-plot(dec$wmatrix[2,4:length(dec$wmatrix[1,])], type = "l", main = "Wavelet level 2", col = 4)
+plot(dec$WaveletCoefficients[2,4:length(dec$WaveletCoefficients[1,])], type = "l", main = "Wavelet level 2", col = 4)
 ```
 
 ```{r, fig.dim = c(7, 4)}
-plot(dec$rhwtCoeff[2,4:length(dec$rhwtCoeff[1,])], type = "l", main = "Last smooth part level", col = 4)
+plot(dec$SmoothCoefficients[2,4:length(dec$SmoothCoefficients[1,])], type = "l", main = "Last smooth part level", col = 4)
 ```
 
 # Evaluating time series forecasting models with cross validation
@@ -76,15 +76,9 @@ The ccps is the result of a model selection done in experiments using the model 
 ### Rolling forecasting origin
 
 ```{r, eval = FALSE}
-horizon = 14
-window_size = 365
-rw_forecasts = mrf::rolling_window(data = data,
-                                   ccps = c(18,16,16,3,19,12),
-                                   agg_per_lvl = c(2,4,8,16,32),
-                                   horizon = horizon,
-                                   window_size = window_size,
-                                   method = "r",
-                                   numClusters = 1)
+rw_forecasts = mrf::rolling_window(UnivariateData, CoefficientCombination,
+                                   Aggregation, Horizon = 2, Window = 3,
+                                   Method = "r", NumClusters = 1)
 ```
 
 ### Mean Absolute Error (MAE)
@@ -92,7 +86,7 @@ rw_forecasts = mrf::rolling_window(data = data,
 The Mean Absolute Error (MAE) is the average over all (here 365) absolute errors of all multi step forecasts (here 14) computed.
 
 ```{r, eval = FALSE}
-MAE = sum(abs(rw_forecasts$Rolling_Window))/(window_size*horizon)
+MAE = sum(abs(rw_forecasts$Error))/(3*2)
 MAE
 ```
 
@@ -105,8 +99,8 @@ The MAE of the Multiresolution Forecast is then scaled with the MAE of the in-sa
 ### Naive2 method
 
 ```{r, eval = FALSE}
-len_data = length(data)
-data = data[1:(len_data-365)]
+len_data = length(UnivariateData)
+data = UnivariateData[1:(len_data-365)]
 len_data = length(data)
 window = len_data-365-14
 horizon = 14
@@ -161,16 +155,9 @@ The forecast error (error = forecast - actual) of the best found model is return
 
 
 ```{r, eval = FALSE}
-evolutionary_optim(data,
-                   agg_per_lvl = c(2,4),
-                   data_name = dataname,
-                   dir_name = "",
-                   horizon = 1,
-                   window_size = 10,
-                   method = "r",
-                   crit = "AIC",
-                   lower_limit = 1,
-                   upper_limit = 2)
+nested_cross_validation(UnivariateData, Horizon = 14, EvaluationLength=2,
+                        TestLength=2, Method="r", MultivariateData=NULL,
+                        NumMV=1, NumClusters=1)
 ```
 
 

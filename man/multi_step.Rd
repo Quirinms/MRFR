@@ -8,28 +8,25 @@ The deployed forecast method can be an autoregression or a neural network
 recursively.
 }
 \usage{
-multi_step(data, steps, ccps, agg_per_lvl, method = "r")
+multi_step(UnivariateData, Horizon, CoefficientCombination, Aggregation, Method = "r")
 }
 \arguments{
-\item{data}{Vector with n time series values.}
-\item{steps}{Number indicating horizon for forecast from 1 to horizon.}
-\item{ccps}{Vector with numbers which are associated with wavelet and smooth 
-levels from decomposition.
-The last number is associated with the smooth part level.
-The preceding numbers are associated with the wavelet levels which are ordered
-increasingly.
-Each number determines the number of coefficient used per level.
-The coefficient selection follows a fixed scheme.}
-\item{agg_per_lvl}{Vector carrying numbers whose index is associated with the
-wavelet level. The numbers indicate the number of time in points used for
-aggregation from the original time series.}
-\item{method}{String indicating which method to use (r = Autoregression, nn =
-Neural Network).}
+\item{UnivariateData}{[1:n] Numerical vector with n values.}
+\item{Horizon}{Number indicating horizon for forecast from 1 to horizon.}
+\item{CoefficientCombination}{[1:Scales+1] Numerical vector with numbers which
+are associated with wavelet levels. The last number is associated with the
+smooth level. Each number determines the number of coefficient used per level.
+The selection follows a specific scheme.}
+\item{Aggregation}{[1:Scales] Numerical vector carrying numbers whose index is
+associated with the wavelet level. The numbers indicate the number of time in
+points used for aggregation from the original time series.}
+\item{Method}{String indicating which method to use. Available methods: 'r'  =
+Autoregression. 'nn' = Neural Network.}
 }
 \value{
 List of
-\item{forecast}{Vector carrying the forecasts, where the index of the
-entry is associated with the horizon of the forecast.}
+\item{multistep}{[1:Horizon] Numerical vector with forecast of horizon according
+to its index.}
 }
 \references{
 Aussem, A., Campbell, J., and Murtagh, F. Waveletbased Feature Extraction
@@ -53,8 +50,7 @@ Quirin Stier
 \examples{
 data(AirPassengers)
 len_data = length(array(AirPassengers))
-result = multi_step(array(AirPassengers)[1:(len_data-1)], 2, c(1,1,1), c(2,4), method="r")
-forecast = result$forecast
+multistep = multi_step(as.vector(AirPassengers)[1:(len_data-1)], 2, c(1,1,1), c(2,4), Method="r")
 }
 \keyword{Multi step forecasts}
 

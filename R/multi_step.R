@@ -1,90 +1,77 @@
-multi_step <- function(data, steps, ccps, agg_per_lvl, method = "r"){
+multi_step <- function(UnivariateData, Horizon, CoefficientCombination, Aggregation, Method = "r"){
+  # DESCRIPTION
+  # Computes multi-step forecasts with the multiresolution method.
+  #
   # INPUT
-  # data[1:n]             Vector with n time series values.
+  # UnivariateData[1:n]                   Numerical vector with n time series
+  #                                       values.
+  # Horizon          Number indicating horizon for forecast from 1 to horizon.
+  # CoefficientCombination[1:Scales+1]    Numerical vector with numbers which
+  #                                       are associated with wavelet levels.
+  #                                       The last number is associated with the
+  #                                       smooth level. Each number determines
+  #                                       the number of coefficient used per
+  #                                       level. The selection follows a
+  #                                       specific scheme.
+  # Aggregation[1:Scales]    Numerical vector carrying numbers whose index is
+  #                          associated with the wavelet level. The numbers
+  #                          indicate the number of time in points used for
+  #                          aggregation from the original time series.
   #
   # OPTIONAL
-  # steps                 Number indicating horizon for forecast from 1 to horizon
-  # ccps                  Vector with numbers which are associated with wavelet levels.
-  #                       The last number is associated with the smooth level.
-  #                       Each number determines the number of coefficient used per level.
-  #                       The selection follows a specific scheme.
-  # agg_per_lvl[]         Vector carrying numbers whose index is associated with the
-  #                       wavelet level. The numbers indicate the number of time in
-  #                       points used for aggregation from the original time series.
-  # method                String indicating which method to use (r = Autoregression, nn = Neural Network)
-  #
+  # Method           String indicating which method to use
+  #                  Available methods: 'r'  = Autoregression
+  #                                     'nn' = Neural Network
   #
   # OUTPUT
-  # forecast              Array carrying the forecasts, where the index of the entry
-  #                       is associated with the horizon of the forecast.
+  # multistep[1:Horizon]    Numerical vector with forecast of horizon according
+  #                         to its index.
+  #
   # Author: QS, 02/2021
-  if(!is.vector(data)){
+  if(!is.vector(UnivariateData)){
     message("Data must be of type vector")
     return()
   }
-  if(!is.double(steps)){
+  if(!is.double(Horizon)){
     message("steps must be of type double")
     return()
   }
-  if(!is.vector(ccps)){
+  if(!is.vector(CoefficientCombination)){
     message("ccps must be of type vector")
     return()
   }
-  if(!is.vector(agg_per_lvl)){
+  if(!is.vector(Aggregation)){
     message("agg_per_lvl must be of type vector")
     return()
   }
-  if(!is.character(method)){
+  if(!is.character(Method)){
     message("method must be of type character")
     return()
   }
   multistep = c()
-  for(i in 1:steps){
+  for(i in 1:Horizon){
     forecast = 0
-    switch(method,
-           "r"={
-             forecast = regression_one_step(data, ccps, agg_per_lvl)
-             forecast = forecast$forecast
-           },
-           "nn"={
-             forecast = neuralnet_one_step(data, ccps, agg_per_lvl)
-             forecast = forecast$forecast
-           },
-           {
-             message("Use 'r' for autoregression and 'nn' for neural network
-              (multilayer perceptron)")
-             return()
-           }
-    )
-    #if(method == "xgboost"){
-    #  forecast = xgboost_one_step(data, ccps, agg_per_lvl)
-    #  forecast = forecast$forecast
-    #}
-    #if(method == "svm"){
-    #  forecast = svm_one_step(data, ccps, agg_per_lvl)
-    #  forecast = forecast$forecast
-    #}
-
+    forecast = onestep(UnivariateData, CoefficientCombination, Aggregation, Method)
     multistep = c(multistep, forecast)
-    data = as.vector(unlist(c(data, forecast)))
+    UnivariateData = as.vector(unlist(c(UnivariateData, forecast)))
   }
   multistep = array(unlist(multistep))
   # Cap forecasts exceeding certain limits
-  max_val = max(data)
+  max_val = max(UnivariateData)
   upper_limit = 0
   if(max_val > 0){
-    upper_limit = 1.3*max(data)
+    upper_limit = 1.3*max(UnivariateData)
   }else{
-    upper_limit = 0.7*max(data)
+    upper_limit = 0.7*max(UnivariateData)
   }
-  min_val = min(data)
+  min_val = min(UnivariateData)
   lower_limit = 0
   if(min_val > 0){
-    lower_limit = 0.7*min(data)
+    lower_limit = 0.7*min(UnivariateData)
   }else{
-    lower_limit = 1.3*min(data)
+    lower_limit = 1.3*min(UnivariateData)
   }
-  for(i in 1:steps){
+  for(i in 1:Horizon){
     forecast = multistep[i]
     if(forecast > upper_limit){
       forecast = upper_limit
@@ -94,8 +81,7 @@ multi_step <- function(data, steps, ccps, agg_per_lvl, method = "r"){
     }
     multistep[i] = forecast
   }
-  result = list("forecast" = multistep)    # Return
-  return(result)
+  return(multistep)
 }
 
 
