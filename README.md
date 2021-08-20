@@ -1,5 +1,6 @@
 # MRFR
-*MRFR: Multi Resolution Forecasting in R -> MRFR*
+
+*MRFR: [Multi Resolution Forecasting in R](https://github.com/Quirinms/MRFR)*
 
 *MRFPY: [Multi Resolution Forecasting in Python](https://github.com/Quirinms/MRFPY)*
 
