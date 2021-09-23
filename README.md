@@ -1,3 +1,7 @@
+[![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/mrf)](https://cran.r-project.org/package=mrf)
+[![CRAN RStudio mirror downloads](https://cranlogs.r-pkg.org/badges/grand-total/mrf?color=blue)](https://r-pkg.org/pkg/mrf)
+[![CRAN RStudio mirror downloads](https://cranlogs.r-pkg.org/badges/last-month/mrf?color=green)](https://r-pkg.org/pkg/mrf)
+
 # MRFR
 
 *MRFR: [Multi Resolution Forecasting in R](https://github.com/Quirinms/MRFR)*
