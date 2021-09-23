@@ -46,7 +46,7 @@ A complete model selection with nested cross validation can be called with the f
 
 ## Installation
 
-install.packages("mrf_0.1.1.tar.gz", repos = NULL, type="source")
+install.packages("mrf_0.1.6.tar.gz", repos = NULL, type="source")
 
 ## References
 
