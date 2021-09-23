@@ -1,7 +1,8 @@
-mrf_rolling_forecasting_origin <- function(UnivariateData,
-                                           CoefficientCombination,
-                                           Aggregation, Horizon = 2, Window = 3,
-                                           Method = "r", NumClusters = 1){
+mrf_rolling_forecasting_origin <- function(UnivariateData, Aggregation,
+                                           CoefficientCombination=NULL,
+                                           Horizon = 2, Window = 3,
+                                           Method = "r", NumClusters = 1,
+                                           Threshold="hard",Lambda=0.05){
   # DESCRIPTION
   # This function computes a rolling forecasting origin. The training of the
   # model and the computation of the procedure itself will be executed on the
@@ -37,6 +38,15 @@ mrf_rolling_forecasting_origin <- function(UnivariateData,
   #                  Available methods: 'r'  = Autoregression
   #                                     'nn' = Neural Network
   # NumClusters      Number of clusters used for parallel computing.
+  # Threshold                Character indicating if Thresholding is done on the
+  #                          wavelet decomposition or not.
+  #                          Default: Threshold="hard". Possible entries:
+  #                          Threshold = "hard" for hard thresholding.
+  #                          Threshold = "soft" for soft thresholding.
+  #                          Any other input indicates no thresholding.
+  # Lambda                   Numeric value indicating the threshold for
+  #                          computing a hard or soft threshold on the wavelet
+  #                          decomposition.
   #
   # OUTPUT
   # Error[1:Window,1:Horizon]       Numerical Matrix with 'Window' many rows
@@ -51,14 +61,11 @@ mrf_rolling_forecasting_origin <- function(UnivariateData,
     message("Data must be of type vector")
     return()
   }
-  if(!is.vector(CoefficientCombination)){
-    message("ccps must be of type vector")
-    return()
-  }
   if(!is.vector(Aggregation)){
     message("agg_per_lvl must be of type vector")
     return()
   }
+
   if(!is.double(Horizon)){
     message("horizon must be of type double")
     return()
@@ -69,6 +76,16 @@ mrf_rolling_forecasting_origin <- function(UnivariateData,
   }
   if(!is.character(Method)){
     message("method must be of type character")
+    return()
+  }
+  if(Method %in% c("r", "nn")){
+    if(!is.vector(CoefficientCombination)){
+      message("ccps must be of type vector")
+      return()
+    }
+  }
+  if(is.null(CoefficientCombination) && (Method %in% c("r", "nn"))){
+    message("CoefficientCombination must be given for all methods except 'elm' and 'nnetar'.")
     return()
   }
   #if(!is.double(numClusters)){
@@ -89,7 +106,9 @@ mrf_rolling_forecasting_origin <- function(UnivariateData,
                                          Horizon = Horizon,
                                          CoefficientCombination = CoefficientCombination,
                                          Aggregation = Aggregation,
-                                         Method = Method)
+                                         Method = Method,
+                                         Threshold = Threshold,
+                                         Lambda = Lambda)
       arr_Error = as.numeric(forecast) - dfTest
       #arr_Error = forecast - dfTest
       matError = rbind(matError, arr_Error)
@@ -141,7 +160,9 @@ mrf_rolling_forecasting_origin <- function(UnivariateData,
                                        agg_per_lvl = Aggregation,
                                        horizon = Horizon,
                                        window_size = Window,
-                                       method = Method)
+                                       method = Method,
+                                       Threshold = Threshold,
+                                       Lambda = Lambda)
 
     RawVector = unlist(lst_forecast)
     RawMatrix = matrix(RawVector, ncol = Horizon*2, byrow = TRUE)
@@ -154,16 +175,19 @@ mrf_rolling_forecasting_origin <- function(UnivariateData,
 
 
 help_function <- function(i, data, ccps, agg_per_lvl, horizon = 14,
-                          window_size = 365, method = "r"){
+                          window_size = 365, method = "r", Threshold = "hard",
+                          Lambda = 0.05){
   int_total_length  = length(data)                        # Length time series
   int_CFCP = int_total_length - window_size - horizon + i # Current Forecast Position
   dfTrain  = data[1:int_CFCP]
   dfTest   = data[int_CFCP+1:horizon]
   forecast = mrf_multi_step_forecast(UnivariateData = dfTrain,
-                                      Horizon = horizon,
-                                      CoefficientCombination = ccps,
-                                      Aggregation = agg_per_lvl,
-                                      Method = method)
+                                     Horizon = horizon,
+                                     CoefficientCombination = ccps,
+                                     Aggregation = agg_per_lvl,
+                                     Method = method,
+                                     Threshold = Threshold,
+                                     Lambda = Lambda)
   arr_Error = as.numeric(forecast) - dfTest
   return(list("Error" = arr_Error, "Forecast"=dfTest))
 }

@@ -3,7 +3,7 @@
 \title{Multiresolution Forecast Requirements}
 \description{
 Computes requirements for given model using insights of various published papers
-and the manuscript [Stier/Thrun, 2021] which is currently under review.
+and the manuscript [Stier et al., 2021] which is currently in press.
 }
 \usage{
 mrf_requirement(UnivariateData, CoefficientCombination, Aggregation)
@@ -27,8 +27,8 @@ training equations can be built up.}
 \item{NumberEquations}{Number of equations which can be built with given data.}
 }
 \references{
-[Stier/Thrun, 2021] Stier, Q., and Thrun, M. C.: Multiresolution Forecasting for
-Industrial Applications, Technical Report, 2021.
+[Stier et al., 2021] Stier, Q.,Gehlert, T. and Thrun, M. C.: Multiresolution Forecasting for
+Industrial Applications, Processess, 2021.
 
 Aussem, A., Campbell, J., and Murtagh, F. Waveletbased Feature Extraction
 and Decomposition Strategies for Financial Forecasting. International Journal of

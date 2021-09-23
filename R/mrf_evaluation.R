@@ -1,6 +1,6 @@
 mrf_evaluation <- function(UnivariateData, Horizon = 14, TestLength=2,
                             TimeSteps4ModelSelection=2, Method="r", MultivariateData=NULL,
-                            NumMV=1, NumClusters=1){
+                            NumMV=1, NumClusters=1,Threshold="hard",Lambda=0.05){
   # DESCRIPTION
   # Evaluates a best performing model on given univariate time series data.
   # Splits data into 3 parts: Train, test and evaluation dataset. Trains
@@ -47,10 +47,10 @@ mrf_evaluation <- function(UnivariateData, Horizon = 14, TestLength=2,
 
 
   if (length(TestUnivariateData) != (DataLength - TestLength)){
-    print("Something went wrong when splitting Data in Test and Evaluation part in modelSelection.py!")
+    message("Something went wrong when splitting Data in Test and Evaluation part in modelSelection.py!")
   }
   if(length(TestUnivariateData) == 0){
-    print("modelSelection: There is no Testdata for computing a model!")
+    message("modelSelection: There is no Testdata for computing a model!")
   }
   #if(typeof(MultivariateData) == np.ndarray){
   #  TestMultivariateData = MultivariateData[0:(DataLength - EvaluationLength)]
@@ -87,7 +87,9 @@ mrf_evaluation <- function(UnivariateData, Horizon = 14, TestLength=2,
                                crit = "AIC",
                                itermax = 1, lower_limit = lower_limit,
                                upper_limit = upper_limit,
-                               NumClusters = NumClusters)
+                               NumClusters = NumClusters,
+                               Threshold=Threshold,
+                               Lambda=Lambda)
     MAE = sum(abs(res$Error))/(TimeSteps4ModelSelection*Horizon)
     lst_Results[[i]] = res$Best
     selectMAE = c(selectMAE, MAE)
@@ -101,14 +103,16 @@ mrf_evaluation <- function(UnivariateData, Horizon = 14, TestLength=2,
                                        Horizon = Horizon,
                                        Window = TestLength,
                                        Method = Method,
-                                       NumClusters = NumClusters)
+                                       NumClusters = NumClusters,
+                                       Threshold = Threshold,
+                                       Lambda = Lambda)
   return(list("Best"=Best, "Error"=res$Error, "Forecast"=res$Forecast))
 }
 
 model_selection_part <- function(UnivariateData, Aggregation, Horizon = 1,
                              Window = 2, Method = "r", crit = "AIC",
                              itermax = 1, lower_limit = 1, upper_limit = 2,
-                             NumClusters = 1){
+                             NumClusters = 1,Threshold="hard", Lambda=0.05){
   # DESCRIPTION
   # Computes best model for a fixed aggregation scheme on two datasets.
   # Training and test.
@@ -205,6 +209,7 @@ model_selection_part <- function(UnivariateData, Aggregation, Horizon = 1,
                          UnivariateData = UnivariateData, Aggregation = Aggregation,
                          Window = Window,
                          Horizon = Horizon, Method = Method, NumClusters = NumClusters,
+                         Threshold=Threshold, Lambda=Lambda,
                          crit = crit,
                          control = DEoptim::DEoptim.control(itermax = itermax))
   ccps = as.numeric(res$optim$bestmem)
@@ -214,7 +219,9 @@ model_selection_part <- function(UnivariateData, Aggregation, Horizon = 1,
                                        Horizon = Horizon,
                                        Window = Window,
                                        Method = Method,
-                                       NumClusters = NumClusters)
+                                       NumClusters = NumClusters,
+                                       Threshold = Threshold,
+                                       Lambda = Lambda)
   mat_error = res$Error
   return(list("Error"=mat_error, "Best"=ccps))
 }
@@ -227,7 +234,9 @@ crit_rolling_window <- function(CoefficientCombination, Aggregation, UnivariateD
                                        Horizon = Horizon,
                                        Window = Window,
                                        Method = Method,
-                                       NumClusters = NumClusters)
+                                       NumClusters = NumClusters,
+                                       Threshold=Threshold,
+                                       Lambda=Lambda)
   mat_error = res$Error
   MAE = sum(abs(mat_error))/(Window*Horizon)
   AIC = length(UnivariateData) * log(MAE^2) + 2*(sum(CoefficientCombination)+1)

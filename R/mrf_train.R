@@ -1,5 +1,6 @@
 mrf_train <- function(Data, Horizon=1, Aggregation="auto", Method = "r",
                       TimeSteps4ModelSelection=2, crit="AIC", InSample=FALSE,
+                      Threshold="hard", Lambda=0.05,
                       NumClusters=1, itermax=1){
   # DESCRIPTION
   # Computes the best model on data on given data selecting
@@ -19,9 +20,11 @@ mrf_train <- function(Data, Horizon=1, Aggregation="auto", Method = "r",
   #                          aggregation from the original time series.
   #                          If set to "auto", wavelet models from levels 1 to 5
   #                          are used for model selection.
-  # Method                   String indicating which method to use
-  #                          Available methods: 'r'  = Regression
-  #                                             'nn' = Neural Network
+  # Method           String indicating which method to use
+  #                  Available methods: 'r'  = Autoregression
+  #                                     'nn' = Neural Network
+  #                                     'elm' = Extreme Learning Machine
+  #                                     'nnetar' = forecast::nnetar
   # TimeSteps4ModelSelection Number of time steps of data (newest part) on which
   #                          a model selection is performed.
   # crit                     String with criterion.
@@ -32,15 +35,26 @@ mrf_train <- function(Data, Horizon=1, Aggregation="auto", Method = "r",
   #                          rolling forecasting origin is computed or not.
   #                          TRUE = Computation of in-sample-forecast.
   #                          FALSE = No computation.
+  # Threshold                Character indicating if Thresholding is done on the
+  #                          wavelet decomposition or not.
+  #                          Default: Threshold="hard". Possible entries:
+  #                          Threshold = "hard" for hard thresholding.
+  #                          Threshold = "soft" for soft thresholding.
+  #                          Any other input indicates no thresholding.
+  # Lambda                   Numeric value indicating the threshold for
+  #                          computing a hard or soft threshold on the wavelet
+  #                          decomposition.
   # NumClusters      Number of clusters used for parallel computing.
   # itermax          Number of iterations for evolutionary optimization method.
   #
   # OUTPUT
   # Model    List of 7 elements containing model specifications:
   # Data[1:n]                Numerical vector with n time series values.
-  # Method                   String indicating which method to use
-  #                          Available methods: 'r'  = Regression
-  #                                             'nn' = Neural Network
+  # Method           String indicating which method to use
+  #                  Available methods: 'r'  = Autoregression
+  #                                     'nn' = Neural Network
+  #                                     'elm' = Extreme Learning Machine
+  #                                     'nnetar' = forecast::nnetar
   # Aggregation[1:Scales]    Numerical vector with best aggregation scheme found.
   # CoefficientCombination[1:Scales+1]    Numerical vector with best combination
   #                          of coefficients found for fixed aggregation scheme.
@@ -82,15 +96,20 @@ mrf_train <- function(Data, Horizon=1, Aggregation="auto", Method = "r",
       }
       req = mrf_requirement(Data, upper_limit, TryAggregations[[i]])
       if(len_Data > req$MinLen){
-        AllAggregations[[i]] = c(2,4)
+        AllAggregations[[i]] = TryAggregations[[i]]
       }
-
     }
-    #AllAggregations = list(c(2,4), c(2,4,8), c(2,4,8,16), c(2,4,8,16,32))
-
-
   }else if(!is.vector(Aggregation)){
     message("Aggregation must be of type vector")
+    return()
+  }else{
+    req = mrf_requirement(Data, upper_limit, Aggregation)
+    if(len_Data > req$MinLen){
+      AllAggregations = list(Aggregation)
+    }
+  }
+  if(length(AllAggregations) == 0){
+    message("Data is too short the multiresolution forecasting method.")
     return()
   }
   lst_Results = list()
@@ -104,35 +123,47 @@ mrf_train <- function(Data, Horizon=1, Aggregation="auto", Method = "r",
       upper_limit = 8
     }
     Aggregation = AllAggregations[[i]]
-    scales = length(Aggregation)
-    len_ccps = scales + 1
-    lower <- rep(lower_limit,len_ccps)
-    upper <- rep(upper_limit,len_ccps)
+    ccps = NULL
+    if(Method %in% c("r", "nn")){
+      scales = length(Aggregation)
+      len_ccps = scales + 1
+      lower <- rep(lower_limit,len_ccps)
+      upper <- rep(upper_limit,len_ccps)
 
-    res = mrf_model_selection(UnivariateData = Data,
-                               Aggregation=Aggregation,
-                               Horizon = Horizon,
-                               Window = TimeSteps4ModelSelection,
-                               Method = Method,
-                               crit = crit,
-                               itermax = itermax, lower_limit = lower,
-                               upper_limit = upper,
-                               NumClusters = NumClusters)
-    lst_Results[[i]] = res$CoefficientCombination
+      res = mrf_model_selection(UnivariateData = Data,
+                                Aggregation=Aggregation,
+                                Horizon = Horizon,
+                                Window = TimeSteps4ModelSelection,
+                                Method = Method,
+                                crit = crit,
+                                itermax = itermax,
+                                lower_limit = lower,
+                                upper_limit = upper,
+                                NumClusters = NumClusters,
+                                Threshold = Threshold,
+                                Lambda = Lambda)
+      ccps = res$CoefficientCombination
+      lst_Results[[i]] = ccps
+    }
     res2 = mrf_rolling_forecasting_origin(Data,
-                                          res$CoefficientCombination,
-                                          Aggregation,
+                                          Aggregation=Aggregation,
+                                          CoefficientCombination=ccps,
                                           Horizon = Horizon,
                                           Window = TimeSteps4ModelSelection,
                                           Method = Method,
-                                          NumClusters = NumClusters)
+                                          NumClusters = NumClusters,
+                                          Threshold = Threshold,
+                                          Lambda = Lambda)
     Error     = res2$Error
     MAE       = sum(abs(res2$Error))/(TimeSteps4ModelSelection*Horizon)
     selectMAE = c(selectMAE, MAE)
   }
   IdxMin      = which(selectMAE==min(selectMAE))
-  Best        = lst_Results[[IdxMin]]
   Aggregation = AllAggregations[[IdxMin]]
+  Best        = NULL
+  if(Method %in% c("r", "nn")){
+    Best = lst_Results[[IdxMin]]
+  }
   # In-sample-forecast
   InSampleMAE = Inf
   Error = Inf
@@ -141,12 +172,14 @@ mrf_train <- function(Data, Horizon=1, Aggregation="auto", Method = "r",
     minLen = res3$MinLen
     Window = length(Data)-minLen-Horizon
     res4 = mrf_rolling_forecasting_origin(Data,
-                                         CoefficientCombination = Best,
-                                         Aggregation            = Aggregation,
-                                         Horizon                = Horizon,
-                                         Window                 = Window,
-                                         Method                 = Method,
-                                         NumClusters            = NumClusters)
+                                          CoefficientCombination = Best,
+                                          Aggregation            = Aggregation,
+                                          Horizon                = Horizon,
+                                          Window                 = Window,
+                                          Method                 = Method,
+                                          NumClusters            = NumClusters,
+                                          Threshold              = Threshold,
+                                          Lambda                 = Lambda)
     InSampleMAE = sum(abs(res4$Error))/(Window*Horizon)
     Error = res4$Error
   }
@@ -156,7 +189,9 @@ mrf_train <- function(Data, Horizon=1, Aggregation="auto", Method = "r",
               "CoefficientCombination"=Best,
               "Horizon"=Horizon,
               "ModelError"=Error,
-              "ModelMAE"=InSampleMAE))
+              "ModelMAE"=InSampleMAE,
+              "Threshold"=Threshold,
+              "Lambda"=Lambda))
 }
 
 #

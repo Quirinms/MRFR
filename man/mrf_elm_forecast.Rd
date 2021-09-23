@@ -1,21 +1,20 @@
-\name{mrf_regression_one_step_forecast}
-\alias{mrf_regression_one_step_forecast}
-\title{One Step Forecast with Regression}
+\name{mrf_elm_forecast}
+\alias{mrf_elm_forecast}
+\title{Forecast with Extreme Learning Machines}
 \description{
-This function creates a one step forecast using an autoregression method.
-The ccps parameter controls the number of coefficients chosen for each wavelet
-and smooth part level individually.
+This function creates a one step forecast using a multi layer perceptron
+with one hidden Layer. The number of input is the sum of all coefficients
+chosen with the parameter CoefficientCombination. The CoefficientCombination
+parameter controls the number of coefficients chosen for each wavelet and smooth
+part level individually.
 }
 \usage{
-mrf_regression_one_step_forecast(UnivariateData, CoefficientCombination,
-Aggregation, Threshold="hard", Lambda=0.05)
+mrf_elm_forecast(UnivariateData, Horizon, Aggregation, Threshold="hard",
+Lambda=0.05)
 }
 \arguments{
 \item{UnivariateData}{[1:n] Numerical vector with n values.}
-\item{CoefficientCombination}{[1:Scales+1] Numerical vector with numbers which
-are associated with wavelet levels. The last number is associated with the
-smooth level. Each number determines the number of coefficient used per level.
-The selection follows a specific scheme.}
+\item{Horizon}{Number indicating horizon for forecast from 1 to horizon.}
 \item{Aggregation}{[1:Scales] Numerical vector carrying numbers whose index is
 associated with the wavelet level. The numbers indicate the number of time in
 points used for aggregation from the original time series.}
@@ -51,16 +50,18 @@ B (Cybernetics), 35(6):1241-1251. doi:10.1109/TSMCB.2005.850182, 2005.
 Quirin Stier
 }
 \examples{
+\donttest{
 data(AirPassengers)
 len_data = length(as.vector(array(AirPassengers)))
 UnivariateData = as.vector(AirPassengers)[1:(len_data-1)]
-CoefficientCombination = c(1,1,1)
 Aggregation = c(2,4)
-forecast = mrf_regression_one_step_forecast(UnivariateData,
-                                            CoefficientCombination,
-                                            Aggregation)
+if(requireNamespace('nnfor', quietly = TRUE)){
+forecast = mrf_elm_forecast(UnivariateData, Horizon=1, Aggregation)
 true_value = array(AirPassengers)[len_data]
 error = true_value - forecast
 }
-\keyword{Regression}
+}
+}
+\concept{Neural Networks}
+\concept{Multilayer Perceptron}
 \concept{One-step forecast}

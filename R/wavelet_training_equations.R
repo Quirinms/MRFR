@@ -57,7 +57,8 @@ wavelet_training_equations <- function(UnivariateData, WaveletCoefficients,
     return()
   }
   if(length(CoefficientCombination) != (Scales + 1)){
-    warning("Length of ccps must be number of scales from decomposition + 1")
+    message("Length of ccps must be number of scales from decomposition + 1")
+    return()
   }
   maxConLen = max(Aggregation)                                          # Range needed for constructing decomposition
   maxReqLen = get_required_training_length(Scales, CoefficientCombination, Aggregation)   # Range needed for constructing model
@@ -66,7 +67,8 @@ wavelet_training_equations <- function(UnivariateData, WaveletCoefficients,
   intNumEquations = round((len_data - startTraining-1), 0)              # Number of equations available for training
   numberWeights = sum(CoefficientCombination)                           # Number of equations needed
   if(numberWeights > intNumEquations){
-    stop("There are not enough equations for training. Your time series is too short!")
+    message("There are not enough equations for training. Your time series is too short!")
+    return()
   }
   lsmatrix = matrix(data = 0, nrow = intNumEquations, ncol = numberWeights)    # Matrix for equations
   for(i in 1:intNumEquations){

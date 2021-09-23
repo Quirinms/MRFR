@@ -1,6 +1,8 @@
 mrf_neuralnet_one_step_forecast <- function(UnivariateData,
                                             CoefficientCombination,
-                                            Aggregation){
+                                            Aggregation,
+                                            Threshold="hard",
+                                            Lambda = 0.05){
   # DESCRIPTION
   # Computes a one-step forecast on given Data using a redundant Haar wavelet
   # transform and a specific selection of coefficients with a multilayer
@@ -39,12 +41,13 @@ mrf_neuralnet_one_step_forecast <- function(UnivariateData,
   }
 
   if((length(CoefficientCombination)-1) != length(Aggregation)){
-    stop("Length of ccps must be longer than that of agg_per_level by one.
+    message("Length of ccps must be longer than that of agg_per_level by one.
     Parameter ccps needs one coefficient per wavelet level and one
          coefficient for the final smooth level.
          Parameter agg_per_level defines the number of levels of the decomposition.")
+    return()
   }
-  dec_res <- wavelet_decomposition(UnivariateData, Aggregation)  # Decomposition
+  dec_res <- wavelet_decomposition(UnivariateData, Aggregation,Threshold,Lambda)  # Decomposition
   trs_res <- wavelet_training_equations(dec_res$UnivariateData,  # Training scheme
                                         dec_res$WaveletCoefficients,
                                         dec_res$SmoothCoefficients,
@@ -61,7 +64,7 @@ mrf_neuralnet_one_step_forecast <- function(UnivariateData,
                                                 Aggregation)
   arr_pred = array(unlist(forecast_scheme), dim=c(1,num_feature))
   matrix = rbind(lm_matrix, arr_pred)
-  set.seed(8675309)
+  #set.seed(8675309)
   if (!requireNamespace('monmlp', quietly = TRUE)) {
     message(
       "Package monmlp is missing in function neuralnet_one_step
@@ -69,7 +72,7 @@ mrf_neuralnet_one_step_forecast <- function(UnivariateData,
       Please install the packages which are defined in 'Suggests'"
     )
     return()
-  }
+  }else{
 
   #model = monmlp::monmlp.fit(x = lm_matrix, y = as.matrix(arr_future_points),
   #                           hidden1 = 8, hidden2 = 0, iter.max = 500,
@@ -90,27 +93,7 @@ mrf_neuralnet_one_step_forecast <- function(UnivariateData,
   len_res = length(res)
   forecast = res[len_res]
   return(forecast)
-}
-
-
-my_relu <- function(x){
-  return(max(0, x))
-}
-my_drelu <- function(x){
-  if(x >= 0){
-    return(1)
-  }else{
-    return(0)
   }
-}
-
-my_tan <- function(x){
-  a = exp(x) - exp(-x)
-  b = exp(x) + exp(-x)
-  return(a/b)
-}
-my_dtan <- function(x){
-  return(1-(tan(x)**2))
 }
 
 

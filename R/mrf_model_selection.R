@@ -1,10 +1,11 @@
 mrf_model_selection <- function(UnivariateData, Aggregation, Horizon = 1,
-                                 Window = 2, Method = "r", crit = "AIC",
-                                 itermax = 1, lower_limit = 1, upper_limit = 2,
-                                 NumClusters = 1){
+                                Window = 2, Method = "r", crit = "AIC",
+                                itermax = 1, lower_limit = 1, upper_limit = 2,
+                                NumClusters = 1, Threshold="hard",Lambda=0.05){
   # DESCRIPTION
   # Computes best model for a fixed aggregation scheme on given data selecting
   # the best method on the training data based on the last Window=2 time steps.
+  # This function does not treat Method="elm"
   #
   # INPUT
   # UnivariateData[1:n]      Numerical vector with n values
@@ -28,6 +29,15 @@ mrf_model_selection <- function(UnivariateData, Aggregation, Horizon = 1,
   # lower_limit      Numeric vector: Lower limit for coefficients selected for each level.
   # upper_limit      Numeric vector: Higher limit for coefficients selected for each level.
   # NumClusters      Number of clusters used for parallel computing.
+  # Threshold                Character indicating if Thresholding is done on the
+  #                          wavelet decomposition or not.
+  #                          Default: Threshold="hard". Possible entries:
+  #                          Threshold = "hard" for hard thresholding.
+  #                          Threshold = "soft" for soft thresholding.
+  #                          Any other input indicates no thresholding.
+  # Lambda                   Numeric value indicating the threshold for
+  #                          computing a hard or soft threshold on the wavelet
+  #                          decomposition.
   #
   #
   # OUTPUT
@@ -72,6 +82,10 @@ mrf_model_selection <- function(UnivariateData, Aggregation, Horizon = 1,
     message("itermax must be of type double")
     return()
   }
+  if(Method %in% c("elm", "nnetar")){
+    message("This function does not work with 'elm'.")
+    return()
+  }
   NumCoeff = length(Aggregation)+1
   if(length(lower_limit) != NumCoeff){
     lower_limit = rep(lower_limit, NumCoeff)
@@ -93,25 +107,31 @@ mrf_model_selection <- function(UnivariateData, Aggregation, Horizon = 1,
     )
     return()
   }
+
   res = DEoptim::DEoptim(crit_rolling_window, lower_limit, upper_limit, fnMap = round,
                          UnivariateData = UnivariateData, Aggregation = Aggregation,
                          Window = Window,
                          Horizon = Horizon, Method = Method, NumClusters = NumClusters,
+                         Threshold=Threshold,Lambda=Lambda,
                          crit = crit,
                          control = DEoptim::DEoptim.control(itermax = itermax))
   ccps = as.numeric(res$optim$bestmem)
   return(list("Aggregation"=Aggregation, "CoefficientCombination"=ccps))
 }
 
-crit_rolling_window <- function(CoefficientCombination, Aggregation, UnivariateData, Window, Horizon,
-                                Method, crit = "AIC", NumClusters = "max"){
+crit_rolling_window <- function(CoefficientCombination, Aggregation,
+                                UnivariateData, Window, Horizon,
+                                Method, crit = "AIC", NumClusters = "max",
+                                Threshold="hard",Lambda=0.05){
   res = mrf_rolling_forecasting_origin(UnivariateData = UnivariateData,
-                                       CoefficientCombination = CoefficientCombination,
                                        Aggregation = Aggregation,
+                                       CoefficientCombination = CoefficientCombination,
                                        Horizon = Horizon,
                                        Window = Window,
                                        Method = Method,
-                                       NumClusters = NumClusters)
+                                       NumClusters = NumClusters,
+                                       Threshold = Threshold,
+                                       Lambda = Lambda)
   mat_error = res$Error
   MAE = sum(abs(mat_error))/(Window*Horizon)
   AIC = length(UnivariateData) * log(MAE^2) + 2*(sum(CoefficientCombination)+1)

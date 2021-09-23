@@ -6,13 +6,22 @@ This function decomposes a time series in its wavelet and smooth coefficients
 using the redundant Haar wavelet transform.
 }
 \usage{
-wavelet_decomposition(UnivariateData, Aggregation = c(2, 4, 8, 16, 32))
+wavelet_decomposition(UnivariateData, Aggregation = c(2, 4, 8, 16, 32),
+Threshold="hard", Lambda=0.05)
 }
 \arguments{
 \item{UnivariateData}{[1:n] Numerical vector with n time series values}
 \item{Aggregation}{[1:Scales] Numerical vector of length 'Scales' carrying
 numbers whose index is associated with the wavelet level. The numbers indicate
 the number of values used for aggregation from the original time series.}
+\item{Threshold}{Character indicating if Thresholding is done on the wavelet
+decomposition or not. Default: Threshold="hard".
+Possible entries:
+Threshold="hard" for hard thresholding.
+Threshold="soft" for soft thresholding.
+Any other input indicates no thresholding.}
+\item{Lambda}{Numeric value indicating the threshold for computing a hard or
+soft threshold on the wavelet decomposition.}
 }
 \value{
 List of

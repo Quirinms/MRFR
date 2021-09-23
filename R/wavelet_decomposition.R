@@ -1,4 +1,5 @@
-wavelet_decomposition <- function(UnivariateData, Aggregation = c(2,4,8,16,32)){
+wavelet_decomposition <- function(UnivariateData, Aggregation = c(2,4,8,16,32),
+                                  Threshold="hard", Lambda=0.05){
   # DESCRIPTION
   # This function decomposes a time series in its wavelet and smooth
   # coefficients using the redundant Haar wavelet transform.
@@ -32,16 +33,62 @@ wavelet_decomposition <- function(UnivariateData, Aggregation = c(2,4,8,16,32)){
   }
   intLenTS = length(UnivariateData)
   if(intLenTS < max(Aggregation)){
-    warning("The length of the time series or data is not long enough for given aggregation")
+    message("The length of the time series or data is not long enough for given aggregation")
+    return()
   }
   Scales = length(Aggregation)
   sprintf("Decomposition is built for %i levels", Scales)
   SmoothCoefficients = dynamic_aggregation(UnivariateData, Aggregation)
   WaveletCoefficients   = compute_wavelet_matrix(UnivariateData, intLenTS, Scales, SmoothCoefficients, WaveletCoefficients)
+  if(is.character(Threshold)){
+    if(Threshold=="hard"){
+      WaveletCoefficients = hard_thresholding(WaveletCoefficients, Lambda)
+    }else if(Threshold=="soft"){
+      WaveletCoefficients = soft_thresholding(WaveletCoefficients, Lambda)
+    }else{
+      message("No thresholding is performed.")
+    }
+  }
   return(list("UnivariateData" = UnivariateData,
               "WaveletCoefficients" = WaveletCoefficients,
               "SmoothCoefficients" = SmoothCoefficients,
               "Scales" = Scales))
+}
+
+hard_thresholding = function(WaveletCoefficients, Lambda){
+  NumLevels = dim(WaveletCoefficients)[1]
+  HardThreshold = c()
+  for(i in 1:NumLevels){
+    tmpVar = quantile(abs(WaveletCoefficients[i,]), probs = Lambda)
+    HardThreshold = c(HardThreshold, tmpVar)
+  }
+  HardThreshold = as.vector(HardThreshold)
+  for(i in 1:NumLevels){
+    WaveletCoefficients[i,abs(WaveletCoefficients[i,]) < HardThreshold[i]] = 0
+  }
+  return(WaveletCoefficients)
+}
+
+soft_thresholding = function(WaveletCoefficients, Lambda){
+  NumLevels = dim(WaveletCoefficients)[1]
+  HardThreshold = c()
+  for(i in 1:NumLevels){
+    tmpVar = stats::quantile(abs(WaveletCoefficients[i,]), probs = Lambda)
+    HardThreshold = c(HardThreshold, tmpVar)
+  }
+  HardThreshold = as.vector(HardThreshold)
+  Length = dim(WaveletCoefficients)[2]
+  for(i in 1:NumLevels){
+    WaveletCoefficients[i,abs(WaveletCoefficients[i,]) < HardThreshold[i]] = 0
+  }
+  for(i in 1:NumLevels){
+    for(j in 1:Length){
+      if(abs(WaveletCoefficients[i,j])>=HardThreshold[i]){
+        WaveletCoefficients[i,j] = sign(WaveletCoefficients[i,j])*(abs(WaveletCoefficients[i,j]-HardThreshold[i]))
+      }
+    }
+  }
+  return(WaveletCoefficients)
 }
 
 first_level_aggregation <- function(data, time, number_aggregation_points){

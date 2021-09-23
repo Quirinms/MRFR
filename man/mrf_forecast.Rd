@@ -2,7 +2,7 @@
 \alias{mrf_forecast}
 \title{Multiresolution Forecast}
 \description{
-Creates a multiresolution forecast for a given multiresolution model based on the manuscript [Stier/Thrun, 2021] which is currently under review.
+Creates a multiresolution forecast for a given multiresolution model based on [Stier et al., 2021] which is currently in press.
 (mrf_train).
 }
 \usage{
@@ -19,8 +19,8 @@ to its index.}
 \item{Model}{List containing model specifications from mrf_train().}
 }
 \references{
-[Stier/Thrun, 2021] Stier, Q., and Thrun, M. C.: Multiresolution Forecasting for
-Industrial Applications, Technical Report, 2021.
+[Stier et al., 2021] Stier, Q.,Gehlert, T. and Thrun, M. C.: Multiresolution Forecasting for
+Industrial Applications, Processess, 2021.
 }
 \author{
 Quirin Stier

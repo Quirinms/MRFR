@@ -14,12 +14,33 @@ This is a R package for time series forecasting and got created for a master the
 
 ## Contents
 
-1. [Description](#description)
-2. [Use cases](#use-cases)
+1. [Highlights](#highlights)
+2. [Description](#description)
 3. [Installation](#installation)
 4. [References](#references)
 
+
+## Highlights
+
+![Highlights](https://github.com/Quirinms/MRFPY/blob/master/doc/images/Highlights.png)
+
 ## Description
+
+This package provides an implementation of an algorithm of the workgroup around Renaud, O., Starck, J.-L., and Murtagh, F..
+It uses a redundant Haar wavelet transform to decompose a time series in its wavelet and the corresponding smooth approximation features.
+Those features are processed in linear or nonlinear methods in order to yield a one-step forecast.
+Multi-step forecasts are obtained recursively.
+Currently, only univariate time series can be forecasted.
+There is ongoing work for multivariate time series forecasting.
+Find the theoretical work from the above mentioned workgroup in the references.
+
+You can create one-step forecasts with various linear and nonlinear methods using wavelet features trying out different possibilites.
+One-step forecasts can be created by directly accessing the methods specific function call or the abstract method "onestep".
+Multi-step forecasts are computed recursively and can be called with the abstract method "multistep".
+Evaluation studies of one specific setting can be computed with the rolling window function.
+A complete model selection with nested cross validation can be called with the function model_selection.
+
+
 
 ## Use case
 

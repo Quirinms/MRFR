@@ -3,13 +3,15 @@
 \title{Rolling forecasting origin for Multiresolution Forecasts}
 \description{
 This function computes a rolling forecasting origin for one- or multi-step
-forecasts with a specific method based on the manuscript [Stier/Thrun, 2021]
-which is currently under review. Multi-step forecasts are computed recursively
+forecasts with a specific method based on the manuscript [Stier  et al., 2021]
+which is currently in press. Multi-step forecasts are computed recursively
 with the one step forecast method.
 }
 \usage{
-mrf_rolling_forecasting_origin(UnivariateData, CoefficientCombination,
-Aggregation, Horizon = 2, Window = 3, Method = "r", NumClusters = 1)
+mrf_rolling_forecasting_origin(UnivariateData, Aggregation,
+CoefficientCombination=NULL, Horizon = 2, Window = 3, Method = "r",
+NumClusters = 1,
+Threshold="hard", Lambda=0.05)
 }
 \arguments{
 \item{UnivariateData}{[1:n] Numerical vector with n values.}
@@ -23,8 +25,17 @@ points used for aggregation from the original time series.}
 \item{Horizon}{Number indicating horizon for forecast from 1 to horizon.}
 \item{Window}{Number indicating how many points are used for cross validation.}
 \item{Method}{String indicating which method to use. Available methods: 'r'  =
-Autoregression. 'nn' = Neural Network.}
+Autoregression. 'nn' = Neural Network. 'elm' = Extreme Learning Machine.
+'nnetar' = forecast::nnetar. Default: Method="r".}
 \item{NumClusters}{Number of clusters used for parallel computing.}
+\item{Threshold}{Character indicating if Thresholding is done on the wavelet
+decomposition or not. Default: Threshold="hard".
+Possible entries:
+Threshold="hard" for hard thresholding.
+Threshold="soft" for soft thresholding.
+Any other input indicates no thresholding.}
+\item{Lambda}{Numeric value indicating the threshold for computing a hard or
+soft threshold on the wavelet decomposition.}
 }
 \value{
 List of
@@ -46,8 +57,8 @@ NumClusters is constrained by the maximum number of clusters available minus one
 to prevent the machine to be overchallenged.
 }
 \references{
-[Stier/Thrun, 2021] Stier, Q., and Thrun, M. C.: Multiresolution Forecasting for
-Industrial Applications, Technical Report, 2021.
+[Stier et al., 2021] Stier, Q.,Gehlert, T. and Thrun, M. C.: Multiresolution Forecasting for
+Industrial Applications, Processess, 2021.
 }
 \author{
 Quirin Stier

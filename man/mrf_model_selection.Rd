@@ -3,13 +3,13 @@
 \title{Model selection for Multiresolution Forecasts}
 \description{
 Evaluates the best coefficient combination for a given aggregation scheme based
-on a rolling forecasting origin  based on the manuscript [Stier/Thrun, 2021]
-which is currently under review.
+on a rolling forecasting origin  based on the manuscript [Stier et al., 2021]
+which is currently in press.
 }
 \usage{
 mrf_model_selection(UnivariateData, Aggregation, Horizon = 1, Window = 2,
 Method = "r", crit = "AIC", itermax = 1, lower_limit = 1, upper_limit = 2,
-NumClusters = 1)
+NumClusters = 1, Threshold="hard", Lambda=0.05)
 }
 \arguments{
 \item{UnivariateData}{[1:n] Numerical vector with n values.}
@@ -19,7 +19,8 @@ points used for aggregation from the original time series.}
 \item{Horizon}{Number indicating horizon for forecast from 1 to horizon.}
 \item{Window}{Number indicating how many points are used for cross validation.}
 \item{Method}{String indicating which method to use. Available methods: 'r'  =
-Autoregression. 'nn' = Neural Network.}
+Autoregression. 'nn' = Neural Network. 'elm' = Extreme Learning Machine.
+'nnetar' = forecast::nnetar. Default: Method="r".}
 \item{crit}{String with criterion. Available criterions: "AIC" = Akaikes Info.
 Crit. "MAE" = Mean Abs. Error. "MRE" = Mean Root Error. Default: crit = "AIC".}
 \item{itermax}{Number of iterations used in the differential evolutionary
@@ -30,6 +31,14 @@ selected for each level.}
 selected for each level.}
 \item{NumClusters}{Number of clusters used for parallel computing. Default:
 NumClusters = 1.}
+\item{Threshold}{Character indicating if Thresholding is done on the wavelet
+decomposition or not. Default: Threshold="hard".
+Possible entries:
+Threshold="hard" for hard thresholding.
+Threshold="soft" for soft thresholding.
+Any other input indicates no thresholding.}
+\item{Lambda}{Numeric value indicating the threshold for computing a hard or
+soft threshold on the wavelet decomposition.}
 }
 \value{
 \item{CoefficientCombination}{[1:Scales+1] Numerical vector with numbers which
@@ -56,8 +65,8 @@ The deployed forecast method can be an autoregression or a neural network
 Quirin Stier
 }
 \references{
-[Stier/Thrun, 2021] Stier, Q., and Thrun, M. C.: Multiresolution Forecasting for
-Industrial Applications, Technical Report, 2021.
+[Stier et al., 2021] Stier, Q.,Gehlert, T. and Thrun, M. C.: Multiresolution Forecasting for
+Industrial Applications, Processess, 2021.
 }
 \examples{
 \donttest{
